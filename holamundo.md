@@ -460,4 +460,205 @@ admin.site.register(Post)
 
 ## User Accounts
 
+Vamos a incluir funciones de autenticación empleando el modelo incluido con Django - en la siguiente aplicacion veremos como usar un modelo de autenticación custom. Las funciones que emplearemos son:
+
+- login
+- logout
+- sing-up
+
+Añadimos a las urls del proyecto las rutas de la app `accounts`:
+
+```py
+from django.contrib import admin
+from django.urls import path, include
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("accounts/", include("django.contrib.auth.urls")),
+    path("accounts/", include("accounts.urls")),  # new
+    path("", include("blog.urls")),
+]
+```
+
+Creamos en la app `accounts` una vista para registrar un usuario, usando una vista generísca `CreateView`, indicando que se use el formulario estandar `UserCreationForm` - con esto indirectamente estamos ya indicando que se use el modelo de autenticacion -, y especificando la ruta a la que navegar después de que un usuario se registre - se usa `reverse_lazy` en todas las vistas `django.views.generic`:
+
+```py
+from django.contrib.auth.forms import UserCreationForm
+from django.urls import reverse_lazy
+from django.views.generic import CreateView
+
+
+class SignUpView(CreateView):
+    form_class = UserCreationForm
+    success_url = reverse_lazy("login")
+    template_name = "registration/signup.html"
+```
+
+y la url:
+
+```py
+urlpatterns = [
+    path("signup/", SignUpView.as_view(), name="signup"),
+]
+```
+
+El template se define de la misma manera que hemos definido el resto de templates:
+
+```html
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Sign Up</h2>
+<form method="post">{% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Sign Up</button>
+</form>
+{% endblock content %}
+```
+
+Para hacer el login :
+
+_As the LoginView documentation notes, by default Django will look within a templates directory called registration for a file called login.html for a log in form. So we need to create a new directory called registration and the requisite file within it._
+
+Esto es, tenemos que colocar un template en `registration\login.html`:
+
+```html
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Log In</h2>
+<form method="post">{% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Log In</button>
+</form>
+{% endblock content %}
+```
+
+En el template que usamos en todas las pantallas, incluimos los links para hacer login, logount, y podemos validar si el usuario esta o no logeado:
+
+```html
+{% load static %}
+<html>
+  <head>
+    <title>Django blog</title>
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400"
+      rel="stylesheet">
+    <link href="{% static 'css/base.css' %}" rel="stylesheet"s>
+  </head>
+  <body>
+    <div>
+      <header>
+        <div class="nav-left">
+          <h1><a href="{% url 'home' %}">Django blog</a></h1>
+        </div>
+        <div class="nav-right">
+          <a href="{% url 'post_new' %}">+ New Blog Post</a>
+        </div>
+      </header>
+      {% if user.is_authenticated %}
+        <p>Hi {{ user.username }}!</p>
+        <p><a href="{% url 'logout' %}">Log out</a></p>
+      {% else %}
+        <p>You are not logged in.</p>
+        <a href="{% url 'login' %}">Log In</a> |
+        <a href="{% url 'signup' %}">Sign Up</a>
+      {% endif %}
+    {% block content %}
+    {% endblock content %}
+    </div>
+  </body>
+</html>
+```
+
+## Static Files
+
+Previously, we configured our static files by creating a dedicated static folder, pointing STATICFILES_DIRS to it in our config/settings.py file, and adding {% load static %} to our base.html template. But since Django won’t serve static files in production, we need a few extra steps now.
+
+The first change is to use Django’s collectstatic command which compiles all static files throughout the project into a singe directory suitable for deployment. Second, we must set the STATIC_ROOT configuration, which is the absolute location of these collected files, to a folder called staticfiles. And third, we need to set STATICFILES_STORAGE, which is the file storage engine used by collectstatic.
+
+```py
+# config/settings.py
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [str(BASE_DIR.joinpath('static'))]
+STATIC_ROOT = STATIC_ROOT = str(BASE_DIR.joinpath('staticfiles')) # new
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage' # new
+```
+
+and in the CLI run:
+
+```ps
+python manage.py collectstatic
+```
+
+If you look at your project folder now you’ll see there’s a new staticfiles folder that contains admin and css folders. The admin is the built-in admin’s static files, while the css is the one we created.
+
+While there are multiple ways to serve these compiled static files in production, the most common approach–and the one we will use here–is to introduce the WhiteNoise package.
+
 ## Tests
+
+Para definir los tests creamos una clase que herede de `TestCase` - hay otra clase, SimpleTestCase, que podemos usar en aquellos casos en los que no haya base de datos.
+
+Para inicializar los tests usamos el método estático `setUpTestData`:
+
+```py
+class BlogTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = get_user_model().objects.create_user(
+            username="testuser", email="test@email.com", password="secret"
+        )
+
+        cls.post = Post.objects.create(
+            title="A good title",
+            body="Nice body content",
+            author=cls.user,
+        )
+```
+
+En este test estamos creando datos en la base de datos que usaremos para la prueba, y que serán eliminados - automáticamente - al concluir el test:
+
+- `get_user_model()` accede al modelo _built-in_ de usuarios
+- `get_user_model().objects.create_user` crea un usuario en la base de datos de usuarios
+- `Post.objects.create` crea un objeto en el modelo `Posts` que hemos definido en `models.py`
+
+Cada caso de prueba se define en un mátodo que se llamara con el prefijo `test_`. A continuación podemos ver un resume de operaciones típicas a incluir en un caso de test:
+
+- Assertions
+
+```py
+self.assertEqual(self.post.title, "A good title")
+self.assertEqual(self.post.get_absolute_url(), "/post/1/")
+```
+
+- Llamadas get, usando una uri o utilizando el nombre de la url - con `reverse`. También podemos ver como pasar argumentos: 
+
+```py
+response = self.client.get("/")
+self.assertEqual(response.status_code, 200)
+
+response = self.client.get(reverse("home"))
+self.assertContains(response, "Nice body content")
+self.assertTemplateUsed(response, "home.html")
+
+response = self.client.get(reverse("post_detail", kwargs={"pk": self.post.pk}))
+```
+
+- Llamadas post, pasando un payload, o un payload y argumentos:
+
+```py
+response = self.client.post(
+    reverse("post_new"),
+    {
+        "title": "New title",
+        "body": "New text",
+        "author": self.user.id,
+    },
+)
+response = self.client.post(
+    reverse("post_edit", args="1"),
+    {
+        "title": "Updated title",
+        "body": "Updated text",
+    },
+)
+```
