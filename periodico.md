@@ -1,3 +1,9 @@
+# Introducción
+
+Este proyecto introduce algunas novedades con respecto del `holamundo`:
+- Crea un modelo custom de usuarios
+- introduce la librería _bootstrap_
+
 ## Modelo de Usuario Custom
 
 Crearemos una app, `accounts` para gestionar el login, logout y singup.
@@ -170,3 +176,75 @@ urlpatterns = [
     path("accounts/", include("django.contrib.auth.urls")),
     path("", include("pages.urls")),  # new
 ]
+
+## Bootstrap
+
+Primero instalamos los módulos:
+
+```ps
+pip install django-crispy-forms
+
+pip install crispy-bootstrap5
+```
+
+Tenemos que añadir la libreria como una App en nuestro proyecto:
+
+```py
+INSTALLED_APPS = [
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    # 3rd Party
+    "crispy_forms",  # new
+    "crispy_bootstrap5",  # new
+```
+
+tambien entre los settings
+
+```py
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"  # new
+CRISPY_TEMPLATE_PACK = "bootstrap5"  # new
+```
+
+Con estas configuraciones ya podemos ùtilizar `crispy forms`. En el template:
+
+```html
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Sign Up{% endblock title%}
+
+{% block content %}
+<h2>Sign Up</h2>
+<form method="post">{% csrf_token %}
+    {{ form|crispy }}
+    <button class="btn btn-success" type="submit">Sign Up</button>
+  </form>
+{% endblock content %}
+```
+
+Incluimos _crispy_:
+
+```html
+{% load crispy_forms_tags %}
+```
+
+y sustituimos `{{ form.as_p }}` por `{{ form|crispy }}`:
+
+```html
+<form method="post">{% csrf_token %}
+    {{ form|crispy }}
+    <button class="btn btn-success" type="submit">Sign Up</button>
+  </form>
+```
+
+Para especificar el estilo de un control, por ejemplo del botón, especificamos la clase:
+
+```html
+<button class="btn btn-success" type="submit">Sign Up</button>
+```
+
+Podemos ver otras muchas opciones de estilo para el botón ![en la página web de bootstrap](https://getbootstrap.com/docs/4.5/components/buttons/).
+
