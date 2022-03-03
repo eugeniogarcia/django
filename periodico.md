@@ -248,3 +248,10 @@ Para especificar el estilo de un control, por ejemplo del botón, especificamos 
 
 Podemos ver otras muchas opciones de estilo para el botón ![en la página web de bootstrap](https://getbootstrap.com/docs/4.5/components/buttons/).
 
+### email
+
+En los settings del proyecto:
+
+```py
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+```
