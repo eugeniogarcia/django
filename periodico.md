@@ -248,10 +248,22 @@ Para especificar el estilo de un control, por ejemplo del botón, especificamos 
 
 Podemos ver otras muchas opciones de estilo para el botón ![en la página web de bootstrap](https://getbootstrap.com/docs/4.5/components/buttons/).
 
-### email
+## email
 
 En los settings del proyecto:
 
 ```py
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+```
+
+Con este backend estamos enviando los correos a la salida de la consola. Si usamos un servidor smtp para enviar los correos, la configuración sería de este tipo: 
+
+```py
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"  # new
+DEFAULT_FROM_EMAIL = "your_custom_email_account"
+EMAIL_HOST = "smtp.sendgrid.net"
+EMAIL_HOST_USER = "apikey"
+EMAIL_HOST_PASSWORD = "sendgrid_password"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
 ```
