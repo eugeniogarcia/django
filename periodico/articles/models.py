@@ -20,7 +20,7 @@ class Article(models.Model):
 
 
 class Comment(models.Model):  # new
-    article = models.ForeignKey(Article, on_delete=models.CASCADE)
+    article = models.ForeignKey(Article, on_delete=models.CASCADE,related_name='comments')
     comment = models.CharField(max_length=140)
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,

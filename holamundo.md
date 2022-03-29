@@ -719,3 +719,68 @@ class ArticleUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):  #
 
 Nótese como solo hemos tenido que _sobreescribir_ el método.
 
+## Extender el modelo
+
+Vamos a incluir una nueva entidad a nuestro modelo - _Comments_ - de modo que podamos añadir comentarios a los artículos. 
+
+```py
+class Comment(models.Model):  # new
+    article = models.ForeignKey(Article, on_delete=models.CASCADE)
+    comment = models.CharField(max_length=140)
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+    )
+```
+
+Un comentario tiene dos foreign keys, una al autor del comentario, y la otra a los árticulos.
+
+Para poder administrar los datos de este modelo, __añadimos el modelo a la aplicación de administración__:
+
+```py(admin.py)
+admin.site.register(Comment)
+```
+
+Si queremos mostrar con cada árticulo todos los comentarios relacionados, podemos hacerlo con _inlines_. Esta es una feature administrativa, que podemos usar en la vista de administración. Hay dos tipos de inlines atendiendo a como se visualiza la información:
+
+- Tabular
+
+```py
+class CommentInline(admin.TabularInline):  # new
+    model = Comment
+```
+
+- Stack
+
+```py
+class CommentInline(admin.StackedInline): # new
+    model = Comment
+```
+
+Los inlines los especificamos en el modelo administrativo:
+
+```py
+class ArticleAdmin(admin.ModelAdmin):
+    inlines = [
+        CommentInline,
+    ]
+```
+
+Por último, hay que especificar este modelo administrativo cuando registremos el modelo de artículos:
+
+```py
+admin.site.register(Article, ArticleAdmin)
+```
+
+### Templates
+
+Para que la información relacionada se incluya en las plantillas hacemos referencia a los comentarios relacionados con `article.comment_set.all`:
+
+```html
+<hr>
+<h4>Comments</h4>
+{% for comment in article.comment_set.all %}
+  <p>{{ comment.author }} &middot; {{ comment }}</p>
+{% endfor %}
+<hr>
+```
