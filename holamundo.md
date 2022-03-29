@@ -662,3 +662,60 @@ response = self.client.post(
     },
 )
 ```
+
+## Mixin
+
+Con los mixin implementamos herencia múltiple en Django. Tenemos mixins incluidos en las librerías de Django, pero tambien podemos crear nuuestros propios mixins. Por ejemplo, si en la definición de las vistas incluimos `LoginRequiredMixin`, lo que estamos obligando es que esa vista solo se pueda acceder a la vista si estamos logeados:
+
+```py
+class ArticleDetailView(LoginRequiredMixin, DetailView):  # new
+    model = Article
+    template_name = "article_detail.html"
+```
+
+Con esta medida podemos cambiar nuestro modelo, y en lugar de especificar al crear un articulo quien es su autor, podemos informar el atributo automáticamente con los datos del usuario logeado:
+
+```py
+class Article(models.Model):
+    title = models.CharField(max_length=255)
+    body = models.TextField()
+    date = models.DateTimeField(auto_now_add=True)
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+    )
+```
+
+En este mixin hemos definido la lógica que cheuquee que el usuario este autenticado. Indicar que el mro va de izquierda a derecha, así que los mixin los colocaremos a la derecha de la declaración. Otro mixin que vamos a utilizar es `UserPassesTestMixin`. Este le usaremos para aplicar la autorización a nuestra aplicación.
+
+```py
+class UserPassesTestMixin(AccessMixin):
+    """
+    Deny a request with a permission error if the test_func() method returns
+    False.
+    """
+
+    def test_func(self):
+        raise NotImplementedError(
+            '{} is missing the implementation of the test_func() method.'.format(self.__class__.__name__)
+        )
+```
+
+El método `test_func` tiene que ser _sobre-escrito_. Por ejemplo, para evitar que solo el autor de un articulo pueda modificarlo, bastaría con hacer:
+
+```py
+class ArticleUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):  # new
+    model = Article
+    fields = (
+        "title",
+        "body",
+    )
+    template_name = "article_edit.html"
+
+    def test_func(self):  # new
+        obj = self.get_object()
+        return obj.author == self.request.user
+```
+
+Nótese como solo hemos tenido que _sobreescribir_ el método.
+
