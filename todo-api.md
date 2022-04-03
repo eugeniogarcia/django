@@ -1,3 +1,5 @@
+## Setup
+
 Además del paquete de Django, el paquete tradicional que se ha usado para construir aplicaciones web, necesitamos instalar un framework REST:
 
 ```ps
@@ -35,7 +37,7 @@ REST_FRAMEWORK = {
 
 Podemos ver la lista completa de opciones [aquí](https://www.django-rest-framework.org/api-guide/settings/).
 
-## Configurar APIs
+## Crear APIs
 
 ### URLs
 
