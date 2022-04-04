@@ -38,13 +38,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework', # new
-    'posts',
     'posts.apps.PostsConfig',
 ]
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated', # new
     ]
 }
 

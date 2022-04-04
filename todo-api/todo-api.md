@@ -82,6 +82,8 @@ class DetailTodo(generics.RetrieveAPIView):
     serializer_class = TodoSerializer
 ```
 
+Con estas vistas podemos administrar los datos del modelo. Por un lado se exponen endpoints que permiten listar datos del modelo - lo que produce el queryset que se haya especificado, que en nuestro caso no tiene restricciones -, y actualizar/borrar datos.
+
 ### CORS
 
 Usaremos `django-cors-headers` para implementar _CORS_. Es un middleware, y como tal tenemos que incorporarlo a la lista de APPs y de MIDDLEWARES:
